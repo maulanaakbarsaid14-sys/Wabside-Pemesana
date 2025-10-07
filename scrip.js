@@ -1,0 +1,15 @@
+/* script.js */
+const form = document.getElementById('orderForm');
+const ordersEl = document.getElementById('orders');
+const yearEl = document.getElementById('year');
+const whatsappBtn = document.getElementById('whatsappBtn');
+yearEl.textContent = new Date().getFullYear();
+function loadOrders(){return JSON.parse(localStorage.getItem('bt_orders') || '[]');}
+function saveOrders(arr){localStorage.setItem('bt_orders', JSON.stringify(arr));}
+function renderOrders(){const data=loadOrders();if(!data.length){ordersEl.innerHTML='<div class="muted">Belum ada pesanan.</div>';return;}ordersEl.innerHTML='';data.slice().reverse().forEach((o,i)=>{const div=document.createElement('div');div.className='order-item';div.innerHTML=`<strong>${escapeHtml(o.name)}</strong> <div class="order-meta">${escapeHtml(o.contact)} • ${escapeHtml(o.serviceType)} • ${escapeHtml(o.deadline||'-')}</div><p class="muted">${escapeHtml(o.description)}</p><div style=\"margin-top:8px;display:flex;gap:8px\"><button class=\"btn ghost\" data-action=\"contact\">Hubungi</button><button class=\"btn\" data-action=\"accept\">Tandai Selesai</button></div>`;ordersEl.appendChild(div);});}
+function escapeHtml(str){if(!str)return'';return String(str).replace(/[&<>\"]/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','\\':'\\\\','"':'&quot;'}[s]));}
+form.addEventListener('submit',e=>{e.preventDefault();const order={name:document.getElementById('name').value.trim(),contact:document.getElementById('contact').value.trim(),serviceType:document.getElementById('serviceType').value,description:document.getElementById('description').value.trim(),deadline:document.getElementById('deadline').value,priceEstimate:document.getElementById('priceEstimate').value.trim(),createdAt:new Date().toISOString()};if(!order.name||!order.contact){alert('Mohon isi nama dan kontak.');return;}const arr=loadOrders();arr.push(order);saveOrders(arr);renderOrders();form.reset();alert('Pesanan tersimpan (demo). Hubungi admin untuk proses lanjut.');});
+document.getElementById('clearBtn').addEventListener('click',()=>{form.reset();});
+ordersEl.addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;const item=btn.closest('.order-item');if(!item)return;const idx=Array.from(ordersEl.children).indexOf(item);const data=loadOrders();const realIdx=data.length-1-idx;const order=data[realIdx];if(btn.dataset.action==='contact'){const text=encodeURIComponent(`Halo, saya dari BantuTugas. Menindaklanjuti pesanan Anda: ${order.serviceType} - ${order.name}.`);window.open('https://wa.me/?text='+text,'_blank');}else if(btn.dataset.action==='accept'){if(confirm('Tandai pesanan ini selesai?')){data.splice(realIdx,1);saveOrders(data);renderOrders();}}});
+whatsappBtn.addEventListener('click',()=>{const wa='https://wa.me/6281300000000?text='+encodeURIComponent('Halo Admin BantuTugas, saya ingin menanyakan layanan.');window.open(wa,'_blank');});
+renderOrders();
